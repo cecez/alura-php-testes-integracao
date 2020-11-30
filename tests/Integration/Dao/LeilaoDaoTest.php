@@ -12,11 +12,19 @@ use PHPUnit\Framework\TestCase;
 class LeilaoDaoTest extends TestCase
 {
 
+    /** @var \PDO */
+    private $_pdo;
+
+    protected function setUp(): void
+    {
+        $this->_pdo = ConnectionCreator::getConnection();
+        $this->_pdo->beginTransaction();
+    }
+
     public function testInsercaoEBuscaDevemFuncionar() {
         // arrange
         $leilao     = new Leilao('Apple Pencil 2020');
-        $pdo        = ConnectionCreator::getConnection();
-        $leilaoDao  = new LeilaoDao($pdo);
+        $leilaoDao  = new LeilaoDao($this->_pdo);
 
         // act
         $leilaoDao->salva($leilao);
@@ -29,8 +37,11 @@ class LeilaoDaoTest extends TestCase
         // assertSame: verifica conteúdo e tipo (===)
         self::assertSame('Apple Pencil 2020', $leiloes[0]->recuperarDescricao());
 
-        // tear down
-        $pdo->exec('DELETE FROM leiloes');
+    }
+
+    protected function tearDown(): void
+    {
+        $this->_pdo->rollBack();
     }
 
 }
