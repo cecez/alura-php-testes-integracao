@@ -13,18 +13,35 @@ class LeilaoDaoTest extends TestCase
 {
 
     /** @var \PDO */
-    private $_pdo;
+    private static $_pdo;
+
+    public static function setUpBeforeClass(): void
+    {
+        // cria banco em memória, para agilizar os testes
+        self::$_pdo = new \PDO('sqlite::memory:');
+
+        // cria estrutura do banco
+        self::$_pdo->exec('
+            create table leiloes
+            (
+                id INTEGER primary key,
+                descricao TEXT,
+                finalizado BOOL,
+                dataInicio TEXT
+            );
+        ');
+
+    }
 
     protected function setUp(): void
     {
-        $this->_pdo = ConnectionCreator::getConnection();
-        $this->_pdo->beginTransaction();
+        self::$_pdo->beginTransaction();
     }
 
     public function testInsercaoEBuscaDevemFuncionar() {
         // arrange
         $leilao     = new Leilao('Apple Pencil 2020');
-        $leilaoDao  = new LeilaoDao($this->_pdo);
+        $leilaoDao  = new LeilaoDao(self::$_pdo);
 
         // act
         $leilaoDao->salva($leilao);
@@ -41,7 +58,7 @@ class LeilaoDaoTest extends TestCase
 
     protected function tearDown(): void
     {
-        $this->_pdo->rollBack();
+        self::$_pdo->rollBack();
     }
 
 }
