@@ -5,20 +5,20 @@ namespace Alura\Leilao\Tests\Integration\Dao;
 
 
 use Alura\Leilao\Dao\Leilao as LeilaoDao;
-use Alura\Leilao\Infra\ConnectionCreator;
 use Alura\Leilao\Model\Leilao;
+use PDO;
 use PHPUnit\Framework\TestCase;
 
 class LeilaoDaoTest extends TestCase
 {
 
-    /** @var \PDO */
+    /** @var PDO */
     private static $_pdo;
 
     public static function setUpBeforeClass(): void
     {
         // cria banco em memória, para agilizar os testes
-        self::$_pdo = new \PDO('sqlite::memory:');
+        self::$_pdo = new PDO('sqlite::memory:');
 
         // cria estrutura do banco
         self::$_pdo->exec('
@@ -38,13 +38,19 @@ class LeilaoDaoTest extends TestCase
         self::$_pdo->beginTransaction();
     }
 
-    public function testInsercaoEBuscaDevemFuncionar() {
+    /**
+     * @dataProvider leiloes
+     * @param  array  $leiloes
+     */
+    public function testBuscaLeiloesNaoFinalizados(array $leiloes) {
+
         // arrange
-        $leilao     = new Leilao('Apple Pencil 2020');
         $leilaoDao  = new LeilaoDao(self::$_pdo);
+        foreach ($leiloes as $leilao) {
+            $leilaoDao->salva($leilao);
+        }
 
         // act
-        $leilaoDao->salva($leilao);
         $leiloes = $leilaoDao->recuperarNaoFinalizados();
 
         // assert
@@ -53,6 +59,43 @@ class LeilaoDaoTest extends TestCase
 
         // assertSame: verifica conteúdo e tipo (===)
         self::assertSame('Apple Pencil 2020', $leiloes[0]->recuperarDescricao());
+
+    }
+
+    /**
+     * @dataProvider leiloes
+     * @param  array  $leiloes
+     */
+    public function testBuscaLeiloesFinalizados(array $leiloes) {
+        // arrange
+        $leilaoDao  = new LeilaoDao(self::$_pdo);
+        foreach ($leiloes as $leilao) {
+            $leilaoDao->salva($leilao);
+        }
+
+        // act
+        $leiloes = $leilaoDao->recuperarFinalizados();
+
+        // assert
+        self::assertCount(1, $leiloes);
+        self::assertContainsOnlyInstancesOf(Leilao::class, $leiloes);
+
+        // assertSame: verifica conteúdo e tipo (===)
+        self::assertSame('Caneta 2020', $leiloes[0]->recuperarDescricao());
+
+    }
+
+    public function leiloes()
+    {
+        $naoFinalizado  = new Leilao('Apple Pencil 2020');  // leilão não finalizado
+        $finalizado     = new Leilao('Caneta 2020');
+        $finalizado->finaliza();                                    // leilão finalizado
+
+        return [
+            [
+                [$naoFinalizado, $finalizado]
+            ]
+        ];
 
     }
 
