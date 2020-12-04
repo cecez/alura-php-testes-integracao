@@ -87,19 +87,22 @@ class LeilaoDaoTest extends TestCase
 
     public function testAoAtualizarLeilaoStatusDeveSerAlterado()
     {
-        // arrange
         $leilao = new Leilao('Xícara 2020');
         $leilaoDao = new LeilaoDao(self::$_pdo);
         $leilao = $leilaoDao->salva($leilao);
-        $leilao->finaliza();
 
-        // act
+        $leiloes = $leilaoDao->recuperarNaoFinalizados();
+        self::assertCount(1, $leiloes);
+        self::assertSame('Xícara 2020', $leiloes[0]->recuperarDescricao());
+        self::assertFalse($leiloes[0]->estaFinalizado());
+
+        $leilao->finaliza();
         $leilaoDao->atualiza($leilao);
 
-        // assert
         $leiloes = $leilaoDao->recuperarFinalizados();
         self::assertCount(1, $leiloes);
         self::assertSame('Xícara 2020', $leiloes[0]->recuperarDescricao());
+        self::assertTrue($leiloes[0]->estaFinalizado());
     }
 
     public function leiloes()
