@@ -85,6 +85,23 @@ class LeilaoDaoTest extends TestCase
 
     }
 
+    public function testAoAtualizarLeilaoStatusDeveSerAlterado()
+    {
+        // arrange
+        $leilao = new Leilao('Xícara 2020');
+        $leilaoDao = new LeilaoDao(self::$_pdo);
+        $leilao = $leilaoDao->salva($leilao);
+        $leilao->finaliza();
+
+        // act
+        $leilaoDao->atualiza($leilao);
+
+        // assert
+        $leiloes = $leilaoDao->recuperarFinalizados();
+        self::assertCount(1, $leiloes);
+        self::assertSame('Xícara 2020', $leiloes[0]->recuperarDescricao());
+    }
+
     public function leiloes()
     {
         $naoFinalizado  = new Leilao('Apple Pencil 2020');  // leilão não finalizado
